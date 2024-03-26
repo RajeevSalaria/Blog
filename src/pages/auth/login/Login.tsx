@@ -30,8 +30,8 @@ const validationSchema = yup.object({
 function Login() {
 	const formik = useFormik({
 		initialValues: {
-			email: 'foobar@example.com',
-			password: 'foobar'
+			email: '',
+			password: ''
 		},
 		validationSchema: validationSchema,
 		onSubmit: (values) => {
@@ -82,6 +82,7 @@ function Login() {
 									onChange={formik.handleChange}
 									onBlur={formik.handleBlur}
 									error={formik.touched.email && Boolean(formik.errors.email)}
+									helperText={formik.touched.email && formik.errors.email}
 								/>
 							</Box>
 							<FormControl>

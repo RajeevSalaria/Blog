@@ -16,22 +16,44 @@ import {
 	FormLabel,
 	RadioGroup,
 	FormControlLabel,
-	Radio
+	Radio,
+	FormHelperText
 } from '@mui/material';
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import AuthService from '../../../services/auth.service';
+import { useFormik } from 'formik';
+import * as yup from 'yup';
+
+const validationSchema = yup.object({
+	email: yup.string().email('Enter a valid email').required('Email is required'),
+	password: yup.string().min(8, 'Password should be of minimum 8 characters length').required('Password is required'),
+	firstName: yup.string().required('First name is required'),
+	lastName: yup.string().required('Last name is required'),
+	phone: yup.string().required('Phone number is required').min(10, 'Phone number should be of minimum 10 characters length').max(10, 'Phone number should be of maximum 10 characters length').matches(/^[0-9]+$/, 'Must be only digits'),
+	confirmPassword: yup
+		.string()
+		.oneOf([yup.ref('password')], 'Passwords must match')
+		.required('Confirm password is required')
+});
 
 function Register() {
-	const [user, setUser] = React.useState({
-		email: '',
-		password: '',
-		firstName: '',
-		lastName: '',
-		phone: '',
-		confirmPassword: '',
-		gender: 'male'
+	const formik = useFormik({
+		initialValues: {
+			email: '',
+			password: '',
+			firstName: '',
+			lastName: '',
+			phone: '',
+			confirmPassword: '',
+			gender: 'male'
+		},
+		validationSchema: validationSchema,
+		onSubmit: (values) => {
+			alert(JSON.stringify(values, null, 2));
+		}
 	});
+
 	const [showPassword, setShowPassword] = React.useState(false);
 	const authService = new AuthService();
 
@@ -40,13 +62,12 @@ function Register() {
 		event.preventDefault();
 	};
 
-	const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setUser({ ...user, [e.target.name]: e.target.value });
-	};
-
 	const handleSubmit = async () => {
-		await authService.createUser(user).then((res) => console.log(res)).catch(err=>console.log(err));
-	}
+		await authService
+			.createUser(formik.values)
+			.then((res) => console.log(res))
+			.catch((err) => console.log(err));
+	};
 
 	return (
 		<Box component={'section'}>
@@ -68,8 +89,11 @@ function Register() {
 									fullWidth
 									type="text"
 									name="firstName"
-									value={user.firstName}
-									onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOnChange(e)}
+									value={formik.values.firstName}
+									onChange={formik.handleChange}
+									onBlur={formik.handleBlur}
+									helperText={formik.touched.firstName && formik.errors.firstName}
+									error={formik.touched.firstName && Boolean(formik.errors.firstName)}
 									id="firstName"
 									label="First name"
 									placeholder="First name"
@@ -80,8 +104,11 @@ function Register() {
 									fullWidth
 									type="text"
 									name="lastName"
-									value={user.lastName}
-									onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOnChange(e)}
+									value={formik.values.lastName}
+									onChange={formik.handleChange}
+									onBlur={formik.handleBlur}
+									error={formik.touched.lastName && Boolean(formik.errors.lastName)}
+									helperText={formik.touched.lastName && formik.errors.lastName}
 									id="lastName"
 									label="Last Name"
 									placeholder="Last name"
@@ -90,9 +117,12 @@ function Register() {
 							<Box component={'div'}>
 								<TextField
 									fullWidth
-									value={user.email}
-									name='email'
-									onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOnChange(e)}
+									value={formik.values.email}
+									helperText={formik.touched.email && formik.errors.email}
+									name="email"
+									onChange={formik.handleChange}
+									onBlur={formik.handleBlur}
+									error={formik.touched.email && Boolean(formik.errors.email)}
 									type="email"
 									id="email"
 									label="Email"
@@ -104,8 +134,10 @@ function Register() {
 								<OutlinedInput
 									fullWidth
 									type={showPassword ? 'text' : 'password'}
-									value={user.password}
-									onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOnChange(e)}
+									value={formik.values.password}
+									onChange={formik.handleChange}
+									onBlur={formik.handleBlur}
+									error={formik.touched.password && Boolean(formik.errors.password)}
 									name="password"
 									id="password"
 									label="Password"
@@ -122,14 +154,17 @@ function Register() {
 										</InputAdornment>
 									}
 								/>
+												<FormHelperText error>{formik.touched.password && formik.errors.password}</FormHelperText>
 							</FormControl>
 							<FormControl>
 								<InputLabel htmlFor="confirmPassword">Confirm Password</InputLabel>
 								<OutlinedInput
 									fullWidth
 									type={showPassword ? 'text' : 'password'}
-									value={user.confirmPassword}
-									onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOnChange(e)}
+									value={formik.values.confirmPassword}
+									onChange={formik.handleChange}
+									onBlur={formik.handleBlur}
+									error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
 									id="confirmPassword"
 									name="confirmPassword"
 									label="Confirm Password"
@@ -146,6 +181,7 @@ function Register() {
 										</InputAdornment>
 									}
 								/>
+												<FormHelperText error>{formik.touched.confirmPassword && formik.errors.confirmPassword}</FormHelperText>
 							</FormControl>
 							<Box component={'div'}>
 								<TextField
@@ -153,8 +189,11 @@ function Register() {
 									type="text"
 									id="mobile"
 									name="phone"
-									value={user.phone}
-									onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOnChange(e)}
+									value={formik.values.phone}
+									onChange={formik.handleChange}
+									onBlur={formik.handleBlur}
+									helperText={formik.touched.phone && formik.errors.phone}
+									error={formik.touched.phone && Boolean(formik.errors.phone)}
 									label="Mobile Number"
 									placeholder="7529842449"
 								/>
@@ -162,15 +201,28 @@ function Register() {
 							<Box component={'div'}>
 								<FormControl>
 									<FormLabel id="row-radio-buttons-group-label">Gender</FormLabel>
-									<RadioGroup row aria-labelledby="row-radio-buttons-group-label" name="gender" value={user.gender} onChange={(e:React.ChangeEvent<HTMLInputElement>)=>handleOnChange(e)}>
-									<FormControlLabel value="male" control={<Radio />} label="Male" />
+									<RadioGroup
+										row
+										aria-labelledby="row-radio-buttons-group-label"
+										name="gender"
+										value={formik.values.gender}
+										onChange={formik.handleChange}
+										onBlur={formik.handleBlur}
+									>
+										<FormControlLabel value="male" control={<Radio />} label="Male" />
 										<FormControlLabel value="female" control={<Radio />} label="Female" />
 										<FormControlLabel value="other" control={<Radio />} label="Other" />
 									</RadioGroup>
 								</FormControl>
 							</Box>
 							<Box component={'div'}>
-								<Button variant="contained" onClick={handleSubmit} size="large" fullWidth sx={{ borderRadius: 8, textTransform: 'none' }}>
+								<Button
+									variant="contained"
+									onClick={handleSubmit}
+									size="large"
+									fullWidth
+									sx={{ borderRadius: 8, textTransform: 'none' }}
+								>
 									Register
 								</Button>
 							</Box>
