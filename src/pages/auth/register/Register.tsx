@@ -49,8 +49,8 @@ function Register() {
 			gender: 'male'
 		},
 		validationSchema: validationSchema,
-		onSubmit: (values) => {
-			alert(JSON.stringify(values, null, 2));
+		onSubmit: async(values) => {
+			await authService.createUser(values).then((res) => console.log(res)).catch((err) => console.log(err));
 		}
 	});
 
@@ -63,10 +63,15 @@ function Register() {
 	};
 
 	const handleSubmit = async () => {
-		await authService
-			.createUser(formik.values)
-			.then((res) => console.log(res))
-			.catch((err) => console.log(err));
+		formik.submitForm();
+		if (formik.isValid && formik.dirty && formik.touched) {
+			formik.values.phone = '+91' + formik.values.phone;
+			await authService
+				.createUser(formik.values)
+				.then((res) => console.log(res))
+				.catch((err) => console.log(err));
+		
+		}
 	};
 
 	return (

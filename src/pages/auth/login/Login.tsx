@@ -17,7 +17,7 @@ import {
 	FormHelperText
 } from '@mui/material';
 import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import AuthService from '../../../services/auth.service';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
@@ -28,14 +28,28 @@ const validationSchema = yup.object({
 });
 
 function Login() {
+	const navigate = useNavigate();
 	const formik = useFormik({
 		initialValues: {
 			email: '',
 			password: ''
 		},
 		validationSchema: validationSchema,
-		onSubmit: (values) => {
-			alert(JSON.stringify(values, null, 2));
+		onSubmit: async (values) => {
+			if (formik.isValid && formik.dirty && formik.touched) {
+				try{
+				await authService
+					.handleLogin(formik.values.email, formik.values.password)
+					.then((res) => {
+						if(res?.data){
+							localStorage.setItem('token', res?.data?.token)
+							navigate('/')
+					 }
+					})
+				}catch(err){
+				console.log(err)
+				}
+			}
 		}
 	});
 
@@ -49,10 +63,7 @@ function Login() {
 	};
 
 	const handleSubmit = async () => {
-		await authService
-			.handleLogin(formik.values.email, formik.values.password)
-			.then((res) => console.log(res))
-			.catch((err) => console.log(err));
+		formik.submitForm();
 	};
 
 	return (
@@ -110,7 +121,7 @@ function Login() {
 										</InputAdornment>
 									}
 								></OutlinedInput>
-									<FormHelperText error >{formik.touched.password && formik.errors.password}</FormHelperText>
+								<FormHelperText error>{formik.touched.password && formik.errors.password}</FormHelperText>
 								<Link
 									to="/forgot-password"
 									component={RouterLink}
